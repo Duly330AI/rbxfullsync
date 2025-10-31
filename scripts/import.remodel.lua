@@ -1,18 +1,21 @@
 -- scripts/import.remodel.lua
 -- Usage: remodel run scripts/import.remodel.lua [inputPlace]
--- If no input supplied: tries gardenclash.rbxl -> place.rbxlx -> place.rbxl
+-- Priority: tries place.rbxlx (XML) first, then gardenclash.rbxlx, then gardenclash.rbxl, then place.rbxl
 
 local input = ...
 if not input or input == "" then
-    local picks = {"gardenclash.rbxl","place.rbxlx","place.rbxl"}
+    local picks = {"place.rbxlx","gardenclash.rbxlx","gardenclash.rbxl","place.rbxl"}
     for _, f in ipairs(picks) do
         local ok = pcall(function() local h=io.open(f,"rb"); if h then h:close() end end)
         if ok then input = f; break end
     end
 end
-assert(input and input ~= "", "No .rbxl/.rbxlx provided or found in repo root.")
+assert(input and input ~= "", "No .rbxlx/.rbxl found in repo root. Prefer exporting .rbxlx (XML).")
 
-local place = remodel.readPlaceFile(input)
+local ok, place = pcall(function() return remodel.readPlaceFile(input) end)
+if not ok then
+    error("Remodel could not read '"..tostring(input).."'. Prefer exporting as .rbxlx (XML) from Roblox Studio.")
+end
 
 -- Workspace -> src/workspace/*.rbxmx
 remodel.createDirAll("src/workspace")

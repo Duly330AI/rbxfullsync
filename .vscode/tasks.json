@@ -4,6 +4,13 @@
     { "label": "Install Tools", "type": "shell", "command": "aftman install && wally install" },
     { "label": "Rojo Serve", "type": "shell", "command": "rojo serve", "isBackground": true },
     { "label": "Format", "type": "shell", "command": "stylua src" },
-    { "label": "Lint", "type": "shell", "command": "selene src" }
+    { "label": "Lint", "type": "shell", "command": "selene src" },
+    {
+      "label": "Import (Remodel)",
+      "type": "shell",
+      "command": ".\\tools\\remodel.exe run .\\scripts\\import.remodel.lua",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    }
   ]
 }
