@@ -19,7 +19,8 @@ if (-not (Test-Path $InputPath)) {
 Write-Host "Extracting from $InputPath ..."
 
 # NOTE: Single-quoted expression preserves the $ characters for rbxmk's query language.
-rbxmk run -i $InputPath -e 'select $.Workspace > writeDir src/workspace; select $.ReplicatedStorage.Models > writeDir src/models'
+# Use pcall to tolerate missing branches without failing the whole run.
+rbxmk run -i $InputPath -e 'pcall(function() select $.Workspace > writeDir src/workspace end); pcall(function() select $.ReplicatedStorage.Models > writeDir src/models end)'
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "rbxmk extraction failed with exit code $LASTEXITCODE"
