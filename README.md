@@ -6,15 +6,28 @@ Eine 2‑Wege‑Synchronisation (Studio → Dateien) existiert nicht; einmalige 
 ## Setup
 
 1. **Tools installieren**
+
    ```bash
    aftman install
    wally install
    ```
 
+   Falls `aftman` in PowerShell nicht gefunden wird, ergänze für die aktuelle Shell den Pfad und installiere die Shims:
+
+   ```powershell
+   $env:Path += ";$env:USERPROFILE\.aftman\bin"
+   aftman install
+   rojo --version
+   wally --version
+   rbxmk --version
+   ```
+
 2. **Live-Sync starten**
+
    ```bash
    rojo serve
    ```
+
    In Roblox Studio das Rojo-Plugin öffnen und **Connect** klicken.
 
 3. **Testen**
@@ -22,7 +35,7 @@ Eine 2‑Wege‑Synchronisation (Studio → Dateien) existiert nicht; einmalige 
 
 ## Struktur
 
-```
+```text
 src/
   shared/               -> ReplicatedStorage/Shared
   server/               -> ServerScriptService/*
@@ -39,10 +52,18 @@ src/
 
 1. In Studio: **File → Save to File...** als `place.rbxlx` speichern.
 2. Mit `rbxmk` extrahieren (Beispiel):
+
    ```bash
    rbxmk run -i place.rbxlx -e "select $.Workspace > writeDir src/workspace; select $.ReplicatedStorage.Models > writeDir src/models"
    ```
 
+   Alternativ: robustes Import-Skript mit Fallback auf lokales `tools\\rbxmk.exe`:
+
+   ```powershell
+   pwsh -File .\scripts\import.ps1
+   ```
+
 ## Hinweise
+
 - Bitte ab jetzt nur im Repo ändern (nicht im Studio editieren).
 - Dynamische Inhalte generieren (Code/Generatoren) statt manuell platzieren.
