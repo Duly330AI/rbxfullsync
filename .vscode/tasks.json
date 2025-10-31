@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     { "label": "Install Tools", "type": "shell", "command": "aftman install && wally install" },
-    { "label": "Rojo Serve", "type": "shell", "command": "rojo serve", "isBackground": true },
+    { "label": "Rojo Serve", "type": "shell", "command": ".\\tools\\rojo.exe serve", "isBackground": true },
     { "label": "Format", "type": "shell", "command": "stylua src" },
     { "label": "Lint", "type": "shell", "command": "selene src" },
     {
@@ -10,6 +10,14 @@
       "type": "shell",
       "command": ".\\tools\\remodel.exe run .\\scripts\\import.remodel.lua",
       "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "One-Click: Reimport + Serve",
+      "dependsOn": ["Import (Remodel)", "Rojo Serve"],
+      "dependsOrder": "sequence",
+      "type": "shell",
+      "command": "echo Done",
       "problemMatcher": []
     }
   ]
