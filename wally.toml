@@ -1,0 +1,9 @@
+[package]
+name = "duly330ai/rbxfullsync"
+version = "0.1.0"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+
+[dependencies]
+# promise = "evaera/promise@^4"
+# signal = "sleitnick/signal@^2"

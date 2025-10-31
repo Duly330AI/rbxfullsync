@@ -1,0 +1,35 @@
+{
+  "name": "rbxfullsync",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$path": "src/replicatedstorage",
+      "Shared": {
+        "$path": "src/shared"
+      },
+      "Models": {
+        "$path": "src/models"
+      }
+    },
+    "ServerScriptService": {
+      "$path": "src/server"
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "$path": "src/client"
+      }
+    },
+    "StarterGui": {
+      "$path": "src/startergui"
+    },
+    "ReplicatedFirst": {
+      "$path": "src/replicatedfirst"
+    },
+    "Lighting": {
+      "$path": "src/lighting"
+    },
+    "Workspace": {
+      "$path": "src/workspace"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+# Roblox/rojo
+*.rbxl
+*.rbxlx
+*.rbxm
+*.rbxmx
+# tools caches
+/wally.lock
+/.aftman
+# OS
+.DS_Store
+Thumbs.db
+# build artifacts
+/build
+/out

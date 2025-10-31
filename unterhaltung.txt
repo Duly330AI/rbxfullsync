@@ -1,0 +1,173 @@
+Ich:"Wir haben festgestellt das hilft alles nicht, Rojo alleine bringt nichts, wir brauchen volle Roblox Studio zu VS Code Synchronisation, das Gesammte Workspace von Roblox Studio muss in VS Code Synchronisiert sein damit ein Agent absolut perfekt und fehlerfrei arbeiten kann, wie bekommen wir das hin, was brauchen wir dafür?". ChatGPT5:"Kurz gesagt: **Eine echte 2-Wege-Live-Spiegelung des gesamten Studio-Workspace ↔ VS Code gibt es nicht.**
+Roblox/Studio erlaubt aus Sicherheitsgründen **keinen** kontinuierlichen „Pull“ aus Studio auf die Festplatte. **Rojo ist absichtlich One-Way (FS → Studio)**.
+
+Was aber **sehr gut** funktioniert (und was große Teams nutzen), ist ein **Agent-tauglicher „Filesystem-as-Source-of-Truth“-Workflow**:
+
+1. **Alles, was dauerhaft sein soll (inkl. Workspace-Content), lebt als Dateien im Repo.**
+2. **Rojo** schiebt diese Dateien live nach Studio (serve).
+3. Falls du einmalig Studio-Inhalte „zurück“ brauchst: **Export .rbxlx → rbxmk/Remodel zerlegen → ins Repo übernehmen.**
+4. Danach: **nicht mehr im Studio editieren**, sondern nur noch im Repo – dein Agent arbeitet 100 % zuverlässig.
+
+Unten bekommst du die **konkrete Einrichtung (Copy-Paste-fähig)**.
+
+---
+
+# Was du brauchst
+
+* **VS Code** + **Rojo-Plugin in Roblox Studio**
+* **Aftman** (Tool-Manager)
+* **Rojo** (Live-Sync), **Wally** (Packages), **rbxmk** (CLI zum Zerlegen/Bauen von .rbxlx), optional **Selene/StyLua** (Lint/Format)
+
+`aftman.toml` (Beispiel – Versionen ggf. anpassen):
+
+```toml
+[tools]
+rojo   = "rojo-rbx/rojo@7.4.0"
+wally  = "UpliftGames/wally@0.3.2"
+rbxmk  = "Anaminus/rbxmk@1.3.1"
+selene = "Kampfkarren/selene@0.26.0"
+stylua = "JohnnyMorganz/stylua@0.20.0"
+```
+
+Dann:
+
+```bash
+aftman install
+wally install
+```
+
+---
+
+# Projektstruktur (Agent-freundlich)
+
+```
+project/
+  src/
+    shared/                 -> ReplicatedStorage/Shared (Configs, Remotes, Libs)
+    server/                 -> ServerScriptService/*
+      services/
+      modules/
+      bosses/
+    client/                 -> StarterPlayer/StarterPlayerScripts/*
+    workspace/              -> Workspace/*   <-- statische Szenen, Zonen, Map
+      Zones/
+      Map/
+    lighting/               -> Lighting/*    <-- optionale Profile/Values
+    startergui/             -> StarterGui/*
+    replicatedfirst/        -> ReplicatedFirst/*
+    models/                 -> ReplicatedStorage/Models (Plant/Decor)
+  default.project.json
+  aftman.toml
+  wally.toml
+```
+
+**Wichtig:** Lege **statische** Workspace-Objekte (Zonen, Hub-Deko, Spawnpunkte …) unter `src/workspace/` ab.
+Alles, was **dynamisch** ist (z. B. instanzierte Pflanzen), bleibt **code-generiert** (Configs + Spawner).
+
+---
+
+# Rojo-Mapping (deckt auch *Workspace* ab!)
+
+`default.project.json`
+
+```json
+{
+  "name": "garden_clash",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$path": "src/replicatedstorage",
+      "Shared": { "$path": "src/shared" },
+      "Models": { "$path": "src/models" }
+    },
+    "ServerScriptService": { "$path": "src/server" },
+    "StarterPlayer": {
+      "StarterPlayerScripts": { "$path": "src/client" }
+    },
+    "StarterGui": { "$path": "src/startergui" },
+    "ReplicatedFirst": { "$path": "src/replicatedfirst" },
+    "Lighting": { "$path": "src/lighting" },
+    "Workspace": { "$path": "src/workspace" }
+  }
+}
+```
+
+> Damit ist **„gesamter Workspace“** aus dem Repo synchronisiert. Du siehst jede Änderung des Agents **sofort** in Studio (Rojo „serve“).
+
+Start der Live-Sync:
+
+```bash
+rojo serve
+```
+
+In Studio (Rojo-Plugin) → **Connect**.
+
+---
+
+# Einmaliger „Pull“ (falls du aktuelle Studio-Szenen übernehmen willst)
+
+1. Studio: **File → Save to File…** → `place.rbxlx` exportieren.
+2. Zerlegen:
+
+```bash
+# Beispiel: Workspace-Zweige ausschneiden
+rbxmk run \
+  -i place.rbxlx \
+  -e "select $.Workspace > writeDir src/workspace; \
+      select $.ReplicatedStorage.Models > writeDir src/models"
+```
+
+(Bei Bedarf auch andere Services extrahieren.)
+3) Dateien commiten; ab jetzt gilt **Repo → Rojo → Studio**.
+
+---
+
+# Agent-Sicherheit (Fehlerfreiheit)
+
+* **Der Agent ändert nur Dateien im Repo** → Rojo spiegelt sie 1:1 in Studio.
+* **Kein Editieren in Studio** (außer Playtest) → keine Drift.
+* **Unit-Tests** (TestEZ/Lune) für Module einrichten, CI optional.
+* **Assets/Modelle**: als `.rbxmx` unter `src/models` versionieren oder **generator-basiert** (wie Plant/Decor-Generator).
+
+---
+
+# Beispiel-Tasks für VS Code (optional)
+
+`.vscode/tasks.json`
+
+```json
+{
+  "version": "2.0.0",
+  "tasks": [
+    { "label": "Install Tools", "type": "shell", "command": "aftman install && wally install" },
+    { "label": "Rojo Serve", "type": "shell", "command": "rojo serve", "isBackground": true },
+    { "label": "Format", "type": "shell", "command": "stylua src" },
+    { "label": "Lint", "type": "shell", "command": "selene src" }
+  ]
+}
+```
+
+---
+
+# Grenzen & Workarounds (ehrlich)
+
+* **Kein echter 2-Wege-Live-Sync**: Studio → Dateien **geht nicht** automatisch. Lösung: **Export → rbxmk** (manuell/skriptbar).
+* **Dynamischer Workspace**: bitte **generativ** (Configs + Spawner), nicht von Hand platzieren.
+* **Assets**: Texturen/Meshes mit **Tarmac**/Wally oder als `.rbxmx` versionieren (kein Copy&Paste im Studio).
+
+---
+
+# Sofort umsetzbar für dein Projekt
+
+1. Lege die oben genannte **Struktur** an (du hast viele Ordner schon).
+2. Erweitere dein `default.project.json` um die **Workspace-Zuordnung** (`"Workspace": {"$path": "src/workspace"}`).
+3. Verschiebe statische Zonen/Hub-Modelle in `src/workspace/...` (oder exportiere einmal mit rbxmk).
+4. Starte `rojo serve` und verbinde in Studio.
+5. Konsequent: **Nur noch im Repo arbeiten** – ab dann kann dein **Agent „perfekt & fehlerfrei“** den gesamten Workspace steuern.
+
+Wenn du willst, erstelle ich dir jetzt sofort:
+
+* ein **minimales `src/workspace/`-Gerüst** (HubZone/GardenZone/ArenaZone als Dateien),
+* eine **rbxmk-Scriptdatei**, die aus `place.rbxlx` genau diese Zweige herauszieht,
+* und eine **PlantLibrary/DecorLibrary**, damit deine Generatoren sauber aus dem Repo heraus arbeiten.
+".
